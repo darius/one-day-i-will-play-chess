@@ -27,8 +27,8 @@ import json
 ## b = InitialChessBoard()
 ## b.mover
 #. 'white'
-## b.castled
-#. AttributeError: ChessBoard instance has no attribute 'castled'
+## b.castling
+#. ((False, False), (False, False))
 ## print str(b)
 #. rnbqkbnr
 #. pppppppp
@@ -53,7 +53,7 @@ import json
 ## b2.mover
 #. 'white'
 ## b2.castling
-#. (True, True)
+#. ((True, True), (True, True))
 ## print str(b2)
 #. rnbqkbnr
 #. pppppppp
@@ -77,10 +77,10 @@ def parse_FEN(fen):
         squares.append(s)
     mover = {'w': 'white', 'b': 'black'}[to_move]
     if castling == '-':
-        castling = (False, False)
+        castling = ((False, False), (False, False))
     else:
-        castling = ('k' in castling or 'q' in castling,
-                    'K' in castling or 'Q' in castling)
+        castling = (('k' in castling, 'q' in castling),
+                    ('K' in castling, 'Q' in castling))
     en_passant = None if en_passant_target == '-' else parse_coords(en_passant_target)
     return ChessBoard(mover, surround(squares), castling, en_passant, None)
 
@@ -140,7 +140,7 @@ def InitialChessBoard():
                '-PPPPPPPP-',
                '-RNBQKBNR-',
                '----------',]
-    return ChessBoard(white, squares, (False, False), None, None)
+    return ChessBoard(white, squares, ((False, False), (False, False)), None, None)
 
 class MoveIllegal(Exception):
     pass
@@ -156,9 +156,6 @@ class ChessBoard:
 
     def __str__(self):
         return '\n'.join(line[1:-1] for line in self.squares[1:-1])
-
-    def can_castle(self, player):
-        return self.castling[player == black]
 
     def get_outcome(self):
         "Return None, 'draw', black, or white (meaning the winner)."
@@ -176,9 +173,27 @@ class ChessBoard:
         piece = squares[r0][c0]
         squares[r0][c0] = ' '
         squares[r1][c1] = piece
+
+        # Update castling status if necessary
+        castling = self.castling
+        if piece.upper() == 'K':
+            castling = list(castling)
+            castling[self.mover == white] = (False, False)
+            castling = tuple(castling)
+        elif piece.upper() == 'R':
+            cm = castling[self.mover == white]
+            if cm[0] or cm[1]:
+                start_rank = 1 if self.mover == white else 8
+                if r0 == start_rank:
+                    queenside = (c0 == 1)
+                    if cm[queenside]:
+                        castling = list(map(list, castling))
+                        castling[self.mover == white][queenside] = False
+                        castling = tuple(map(tuple, castling))
+
         return ChessBoard(opponent(self.mover),
                           list(map(''.join, squares)),
-                          self.castling,
+                          castling,
                           en_passant_target,
                           None)
 
@@ -195,7 +210,7 @@ class ChessBoard:
                           None)
 
     def move_promoting(self, (r0, c0), (r1, c1)):
-        # XXX support promotions other to queen 
+        # XXX support promotions besides to queen 
         squares = list(map(list, self.squares))
         piece = squares[r0][c0]
         squares[r0][c0] = ' '
@@ -290,12 +305,15 @@ class ChessBoard:
                 if er == r+forward and abs(ec-c) == 1:
                     yield EnPassantCapture((r, c), (er, ec))
         elif piece == 'K':
-            # TODO castling
             # TODO forbid moving into check
             # (and this can apply to moves of other pieces)
             for dr, dc in queen_dirs:
                 if is_takeable(r+dr, c+dc):
                     yield move_to(r+dr, c+dc)
+            if self.castling[is_white][0]: # King's side
+                pass                         # XXX TODO
+            if self.castling[is_white][1]: # Queen's side
+                pass                         # XXX
         elif piece == 'Q':
             for move in move_freely(queen_dirs):  yield move
         elif piece == 'R':
