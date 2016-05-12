@@ -17,16 +17,16 @@ import random
 ## rr['turn']
 #. u'w'
 ## print str(parse_FEN(rr['fen']))
-#. (True, True)
-#. rnbqkbnr
-#. pppppppp
-#.         
-#.         
-#.         
-#.         
-#. PPPPPPPP
-#. RNBQKBNR
-#. (True, True)
+#. 8  r n b q k b n r
+#. 7  p p p p p p p p
+#. 6  . . . . . . . .
+#. 5  . . . . . . . .
+#. 4  . . . . . . . .
+#. 3  . . . . . . . .
+#. 2  P P P P P P P P
+#. 1  R N B Q K B N R
+#. 
+#.    a b c d e f g h
 
 ## b = InitialChessBoard()
 ## b.mover
@@ -34,16 +34,16 @@ import random
 ## b.castling
 #. ((True, True), (True, True))
 ## print str(b)
-#. (True, True)
-#. rnbqkbnr
-#. pppppppp
-#.         
-#.         
-#.         
-#.         
-#. PPPPPPPP
-#. RNBQKBNR
-#. (True, True)
+#. 8  r n b q k b n r
+#. 7  p p p p p p p p
+#. 6  . . . . . . . .
+#. 5  . . . . . . . .
+#. 4  . . . . . . . .
+#. 3  . . . . . . . .
+#. 2  P P P P P P P P
+#. 1  R N B Q K B N R
+#. 
+#.    a b c d e f g h
 ## pw = HumanPlayer(white)
 ## pb = HumanPlayer(black)
 ## b.outcome
@@ -61,16 +61,16 @@ import random
 ## b2.castling
 #. ((True, True), (True, True))
 ## print str(b2)
-#. (True, True)
-#. rnbqkbnr
-#. pppppppp
-#.         
-#.         
-#.         
-#.         
-#. PPPPPPPP
-#. RNBQKBNR
-#. (True, True)
+#. 8  r n b q k b n r
+#. 7  p p p p p p p p
+#. 6  . . . . . . . .
+#. 5  . . . . . . . .
+#. 4  . . . . . . . .
+#. 3  . . . . . . . .
+#. 2  P P P P P P P P
+#. 1  R N B Q K B N R
+#. 
+#.    a b c d e f g h
 
 def parse_FEN(fen):
     placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock = fen.split()
