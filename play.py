@@ -1,5 +1,6 @@
 """
 Interact with the NGW chess server.
+https://community.recurse.com/t/ngw-chess-ai-tournament/1724
 """
 
 import requests, sys, time
@@ -9,23 +10,31 @@ from chack import *
 stem = 'http://52.200.188.234:3000/test/'
 
 def main(argv):
-    assert len(argv) == 3
+    assert len(argv) == 4
     game = argv[1]
-    color = argv[2]
+    strategy = argv[2]
+    color = argv[3]
     url = stem + game
 
     while True:
         r = requests.get(url)
         if r.status_code != 200:
             print 'oh noes', r
-            time.sleep(0.5)
+            time.sleep(1)
             continue
-        js = r.json()
-        print js
-#        try:
-#        except 
+        try:
+            js = r.json()
+        except ValueError as e:
+            print 'oh the horror', e
+            time.sleep(10)
+            continue
+        turn = js['turn']
+        if turn != color:
+            print 'waiting'
+            time.sleep(1)
+            continue
+        board = parse_FEN(js['fen'])
         
-        break
 
 
 def testme(argv):
