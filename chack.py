@@ -15,6 +15,7 @@ import json
 ## rr['turn']
 #. u'w'
 ## print str(parse_FEN(rr['fen']))
+#. (True, True)
 #. rnbqkbnr
 #. pppppppp
 #.         
@@ -23,13 +24,15 @@ import json
 #.         
 #. PPPPPPPP
 #. RNBQKBNR
+#. (True, True)
 
 ## b = InitialChessBoard()
 ## b.mover
 #. 'white'
 ## b.castling
-#. ((False, False), (False, False))
+#. ((True, True), (True, True))
 ## print str(b)
+#. (True, True)
 #. rnbqkbnr
 #. pppppppp
 #.         
@@ -38,6 +41,7 @@ import json
 #.         
 #. PPPPPPPP
 #. RNBQKBNR
+#. (True, True)
 ## pw = HumanPlayer(white)
 ## pb = HumanPlayer(black)
 ## b.outcome
@@ -55,6 +59,7 @@ import json
 ## b2.castling
 #. ((True, True), (True, True))
 ## print str(b2)
+#. (True, True)
 #. rnbqkbnr
 #. pppppppp
 #.         
@@ -63,6 +68,7 @@ import json
 #.         
 #. PPPPPPPP
 #. RNBQKBNR
+#. (True, True)
 
 def parse_FEN(fen):
     placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock = fen.split()
@@ -140,7 +146,7 @@ def InitialChessBoard():
                '-PPPPPPPP-',
                '-RNBQKBNR-',
                '----------',]
-    return ChessBoard(white, squares, ((False, False), (False, False)), None, None)
+    return ChessBoard(white, squares, ((True, True), (True, True)), None, None)
 
 class MoveIllegal(Exception):
     pass
@@ -155,7 +161,9 @@ class ChessBoard:
         self.outcome = outcome
 
     def __str__(self):
-        return '\n'.join(line[1:-1] for line in self.squares[1:-1])
+        return (str(self.castling[0]) + '\n'
+                + '\n'.join(line[1:-1] for line in self.squares[1:-1])
+                + '\n' + str(self.castling[1]))
 
     def get_outcome(self):
         "Return None, 'draw', black, or white (meaning the winner)."
@@ -212,12 +220,30 @@ class ChessBoard:
     def move_promoting(self, (r0, c0), (r1, c1)):
         # XXX support promotions besides to queen 
         squares = list(map(list, self.squares))
-        piece = squares[r0][c0]
         squares[r0][c0] = ' '
         squares[r1][c1] = 'Q' if self.mover == 'white' else 'q'
         return ChessBoard(opponent(self.mover),
                           list(map(''.join, squares)),
                           self.castling,
+                          None,
+                          None)
+
+    def castle(self, (r0, c0), (r1, c1)):
+        squares = list(map(list, self.squares))
+        piece = squares[r0][c0]
+        squares[r0][c0] = ' '
+        squares[r1][c1] = piece
+        rook_c = 8 if c1 == 7 else 1
+        squares[r1][(c0+c1)//2] = squares[r1][rook_c]
+        squares[r1][rook_c] = ' '
+
+        castling = list(self.castling)
+        castling[self.mover == white] = (False, False)
+        castling = tuple(castling)
+
+        return ChessBoard(opponent(self.mover),
+                          list(map(''.join, squares)),
+                          castling,
                           None,
                           None)
 
@@ -311,9 +337,11 @@ class ChessBoard:
                 if is_takeable(r+dr, c+dc):
                     yield move_to(r+dr, c+dc)
             if self.castling[is_white][0]: # King's side
-                pass                         # XXX TODO
+                if self.squares[r][6:8].isspace():
+                    yield CastlingMove((r, c), (r, 7))
             if self.castling[is_white][1]: # Queen's side
-                pass                         # XXX
+                if self.squares[r][2:5].isspace():
+                    yield CastlingMove((r, c), (r, 3))
         elif piece == 'Q':
             for move in move_freely(queen_dirs):  yield move
         elif piece == 'R':
@@ -346,8 +374,6 @@ class ResignMove:
     def update(self, board):
         return board.resign()
     def matches(self, string):
-        return string.lower() == 'resign'
-    def matches(self, string):
         return string.lower() == str(self)
     def __str__(self):
         return 'resign'
@@ -378,6 +404,14 @@ def parse_coords(s):
     r = int(s[1])
     assert 1 <= r <= 8
     return r, c
+
+class CastlingMove(PieceMove):
+    def update(self, board):
+        return board.castle(self.from_pos, self.to_pos)
+    def __str__(self):
+        if self.to_pos[1] == 3: return 'o-o-o'
+        if self.to_pos[1] == 7: return 'o-o'
+        assert False
 
 class EnPassantCapture(PieceMove):
     # XXX might need special parsing/unparsing
