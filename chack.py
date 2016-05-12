@@ -183,7 +183,7 @@ class ChessBoard:
         elif piece.upper() == 'R':
             cm = castling[self.mover == white]
             if cm[0] or cm[1]:
-                start_rank = 1 if self.mover == white else 8
+                start_rank = 8 if self.mover == white else 1
                 if r0 == start_rank:
                     queenside = (c0 == 1)
                     if cm[queenside]:
