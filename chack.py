@@ -1,10 +1,12 @@
 """
 Chess board
-No computer player yet
+Starting work on a ComputerPlayer!
 Sucks in other ways too
 """
 
 import json
+import sys
+import random
 
 ## response = '{"clock":{"w":300,"b":300},"pgn":"","fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","turn":"w","result":"*","color":"w"}'
 ## rr = json.loads(response)
@@ -93,9 +95,10 @@ def parse_FEN(fen):
 def surround(rows):
     return ['----------'] + ['-%s-' % row for row in rows] + ['----------']
 
-def main():
+def main(argv):
     print "(Moves look like 'e2e3')"
-    play_chess(HumanPlayer, HumanPlayer)
+    strategy_names = {'human': HumanPlayer, 'greedy': GreedyComputerPlayer, 'random': RandomComputerPlayer}
+    play_chess(strategy_names[argv[1]], strategy_names[argv[2]])
 
 def play_chess(white_strategy, black_strategy):
     return play(InitialChessBoard(), [white_strategy, black_strategy])
@@ -132,8 +135,50 @@ class HumanPlayer:
             print '%s, you win!' % self.side.capitalize()
         elif board.get_outcome() == 'draw':
             print 'You draw.'
+        else: print '%s, you lose!' % self.side.capitalize()
+
+def greedy_evaluate(board, side):
+    board_string = "".join(board.squares)
+    white_count = sum(1 for piece in board_string if piece.isupper())
+    black_count = sum(1 for piece in board_string if piece.islower())
+    if side == "white":
+        piece_count_score = white_count - black_count
+    else:
+        piece_count_score = black_count - white_count
+
+    mobility_score = 0
+
+    return piece_count_score + mobility_score
+
+class ComputerPlayer:
+    def __init__(self, side):
+        self.side = side
+
+    def on_game_over(self, board):
+        board.show()
+        if board.get_outcome() is None:
+            pass
+        elif board.get_outcome() == self.side:
+            print '%s, you win!' % self.side.capitalize()
+        elif board.get_outcome() == 'draw':
+            print 'You draw.'
         else:
             print '%s, you lose!' % self.side.capitalize()
+
+class GreedyComputerPlayer(ComputerPlayer):
+    def pick_move(self, board):
+        board.show()
+        possible_moves = board.get_moves()
+        possible_moves.remove(ResignMove())
+        best_move = max(possible_moves, key=lambda move: greedy_evaluate(move.update(board), self.side))
+        return best_move
+
+class RandomComputerPlayer(ComputerPlayer):
+    def pick_move(self, board):
+        board.show()
+        possible_moves = board.get_moves()
+        possible_moves.remove(ResignMove())
+        return random.choice(possible_moves)
 
 def InitialChessBoard():
     squares = ['----------',
@@ -161,12 +206,41 @@ class ChessBoard:
         self.outcome = outcome
 
     def __str__(self):
-        return (str(self.castling[0]) + '\n'
-                + '\n'.join(line[1:-1] for line in self.squares[1:-1])
-                + '\n' + str(self.castling[1]))
+        def addSpace(line):
+            return " ".join(line)
+        def addDots(line):
+            return line.replace(" ", ".")
+
+        return ('\n'.join(str(8-i)+"  "+addSpace(addDots(line[1:-1])) for i, line in enumerate(self.squares[1:-1]))
+                + '\n\n' +  "   a b c d e f g h")
+
+    def check(self, side):
+        """ check if a particular player is in check """
+        if side == 'white':
+            king = 'K'
+        else: king = 'k'
+        
+        possible_boards = [move.update(self) for move in self.get_piece_moves()]
+        for board in possible_boards:
+            if king not in "".join(board.squares):
+                return True
+        return False
+
+    def checkmate(self):
+        """ check if the person about to move is in checkmate """
+        possible_boards = [move.update(self) for move in self.get_piece_moves()]
+        for board in possible_boards:
+            if not board.check(self.mover):
+                return False
+        return True
 
     def get_outcome(self):
         "Return None, 'draw', black, or white (meaning the winner)."
+        if self.outcome == None:
+            if self.checkmate():
+                return opponent(self.mover)
+            if len(self.get_piece_moves()) == 0:
+                return 'draw'
         return self.outcome
 
     def resign(self):
@@ -424,4 +498,4 @@ class PawnPromotion(PieceMove):
         return board.move_promoting(self.from_pos, self.to_pos)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
