@@ -74,6 +74,14 @@ import random
 
 def parse_FEN(fen):
     placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock = fen.split()
+    print 'FEN from server:'
+    print ' placement', placement
+    print ' to_move', to_move
+    print ' castling', castling
+    print ' en_passant', en_passant_target
+    print ' halfmove_clock', halfmove_clock
+    print ' fullmove_clock', fullmove_clock
+
     squares = []
     for row in placement.split('/'):
         s = ''
@@ -97,7 +105,6 @@ def surround(rows):
 
 def main(argv):
     print "(Moves look like 'e2e3')"
-    strategy_names = {'human': HumanPlayer, 'greedy': GreedyComputerPlayer, 'random': RandomComputerPlayer}
     play_chess(strategy_names[argv[1]], strategy_names[argv[2]])
 
 def play_chess(white_strategy, black_strategy):
@@ -108,6 +115,8 @@ def play(board, strategies):
                for strategy, side in zip(strategies, board.get_sides())]
     while board.get_outcome() is None:
         board = board.play_turn(players)
+        print
+        print
     for player in players:
         player.on_game_over(board)
 
@@ -137,18 +146,32 @@ class HumanPlayer:
             print 'You draw.'
         else: print '%s, you lose!' % self.side.capitalize()
 
+def minimax_value(board, side, depth):
+    if 0 < depth:
+        moves = board.get_piece_moves()
+        if not moves: return 0
+        return -min(minimax_value(move.update(board), opponent(side), depth-1)
+                    for move in moves)
+        values = [minimax_value(move.update(board), opponent(side), depth-1)
+                  for move in moves]
+        if 0 and min(values) != 0:
+            print 'minimax', side
+            print board
+            print sorted(zip(values, map(str, moves)))
+            print
+        return -min(values)
+    return greedy_evaluate(board, side) + random.uniform(0, 0.001)
+
+piece_values = dict(p=1, n=3, b=3, r=5, q=9, k=1000)
+for pp, vv in piece_values.items():
+    piece_values[pp.upper()] = -vv
+piece_values[' '] = 0
+piece_values['-'] = 0
+
 def greedy_evaluate(board, side):
-    board_string = "".join(board.squares)
-    white_count = sum(1 for piece in board_string if piece.isupper())
-    black_count = sum(1 for piece in board_string if piece.islower())
-    if side == "white":
-        piece_count_score = white_count - black_count
-    else:
-        piece_count_score = black_count - white_count
-
-    mobility_score = 0
-
-    return piece_count_score + mobility_score
+    total = sum(piece_values[piece]
+                for piece in "".join(board.squares))
+    return -total if side == "white" else total
 
 class ComputerPlayer:
     def __init__(self, side):
@@ -172,6 +195,15 @@ class GreedyComputerPlayer(ComputerPlayer):
         possible_moves.remove(ResignMove())
         best_move = max(possible_moves, key=lambda move: greedy_evaluate(move.update(board), self.side))
         return best_move
+
+class MinimaxPlayer(ComputerPlayer):
+    def __init__(self, side, depth=2):
+        self.side = side
+        self.depth = depth
+    def pick_move(self, board):
+        board.show()
+        possible_moves = board.get_piece_moves()
+        return min(possible_moves, key=lambda move: minimax_value(move.update(board), opponent(self.side), self.depth))
 
 class RandomComputerPlayer(ComputerPlayer):
     def pick_move(self, board):
@@ -482,7 +514,7 @@ def parse_coords(s):
 class CastlingMove(PieceMove):
     def update(self, board):
         return board.castle(self.from_pos, self.to_pos)
-    def __str__(self):
+    def XXX__str__(self): # XXX actually the server takes the PieceMove notation now
         if self.to_pos[1] == 3: return 'o-o-o'
         if self.to_pos[1] == 7: return 'o-o'
         assert False
@@ -496,6 +528,8 @@ class PawnPromotion(PieceMove):
     # XXX might need special parsing/unparsing
     def update(self, board):
         return board.move_promoting(self.from_pos, self.to_pos)
+
+strategy_names = {'human': HumanPlayer, 'greedy': GreedyComputerPlayer, 'random': RandomComputerPlayer, 'minimax': MinimaxPlayer}
 
 if __name__ == '__main__':
     main(sys.argv)

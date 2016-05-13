@@ -7,7 +7,7 @@ import requests, sys, time
 
 from chack import *
 
-stem = 'http://52.200.188.234:3000/test/'
+stem = 'http://52.200.188.234:3000/robot/test/'
 
 def main(argv):
     assert len(argv) == 4
@@ -16,12 +16,19 @@ def main(argv):
     color = argv[3]
     url = stem + game
 
+    side = {'w': 'white', 'b': 'black'}[color]
+    player = strategy_names[strategy](side)
+
     while True:
+        print "it's", time.asctime()
+        print 'GET', url
         r = requests.get(url)
         if r.status_code != 200:
             print 'oh noes', r
-            time.sleep(1)
+            time.sleep(10)
             continue
+        print 'response:'
+        print '  ', r.text
         try:
             js = r.json()
         except ValueError as e:
@@ -33,9 +40,21 @@ def main(argv):
             print 'waiting'
             time.sleep(1)
             continue
-        board = parse_FEN(js['fen'])
-        
 
+        board = parse_FEN(js['fen'])
+#        print board
+        move = player.pick_move(board)
+        print 'playing', move, 'yielding'
+        print move.update(board)
+
+        print 'POST', url + '?move=%s' % move
+        r = requests.post(url + '?move=%s' % move)
+        print 'response', r.status_code
+        if r.status_code != 200:
+            print 'OH NOES', r
+            return
+        
+        time.sleep(1)
 
 def testme(argv):
     url = stem + '4'
@@ -49,4 +68,4 @@ def testme(argv):
     print r.json()
 
 if __name__ == '__main__':
-    testme(sys.argv)
+    main(sys.argv)
