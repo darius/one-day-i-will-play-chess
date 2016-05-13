@@ -7,17 +7,13 @@ import requests, sys, time
 
 from chack import *
 
-stem = 'http://52.200.188.234:3000/robot/test/'
+stem = 'http://52.200.188.234:3000/'
 
 def main(argv):
-    assert len(argv) == 4
+    assert len(argv) == 3
     game = argv[1]
     strategy = argv[2]
-    color = argv[3]
     url = stem + game
-
-    side = {'w': 'white', 'b': 'black'}[color]
-    player = strategy_names[strategy](side)
 
     while True:
         print "it's", time.asctime()
@@ -35,10 +31,15 @@ def main(argv):
             print 'oh the horror', e
             time.sleep(10)
             continue
+
+        color = js['color']
+        side = {'w': 'white', 'b': 'black'}[color]
+        player = strategy_names[strategy](side)
+
         turn = js['turn']
         if turn != color:
             print 'waiting'
-            time.sleep(1)
+            time.sleep(0.2)
             continue
 
         board = parse_FEN(js['fen'])
@@ -49,12 +50,12 @@ def main(argv):
 
         print 'POST', url + '?move=%s' % move
         r = requests.post(url + '?move=%s' % move)
-        print 'response', r.status_code
+        print 'response', r.status_code, r.text
         if r.status_code != 200:
             print 'OH NOES', r
             return
         
-        time.sleep(1)
+        time.sleep(0.2)
 
 def testme(argv):
     url = stem + '4'

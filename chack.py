@@ -152,17 +152,9 @@ def minimax_value(board, side, depth):
         if not moves: return 0
         return -min(minimax_value(move.update(board), opponent(side), depth-1)
                     for move in moves)
-        values = [minimax_value(move.update(board), opponent(side), depth-1)
-                  for move in moves]
-        if 0 and min(values) != 0:
-            print 'minimax', side
-            print board
-            print sorted(zip(values, map(str, moves)))
-            print
-        return -min(values)
     return greedy_evaluate(board, side) + random.uniform(0, 0.001)
 
-piece_values = dict(p=1, n=3, b=3, r=5, q=9, k=1000)
+piece_values = dict(p=1, n=3.1, b=3.3, r=5, q=9, k=1000)
 for pp, vv in piece_values.items():
     piece_values[pp.upper()] = -vv
 piece_values[' '] = 0
@@ -197,7 +189,7 @@ class GreedyComputerPlayer(ComputerPlayer):
         return best_move
 
 class MinimaxPlayer(ComputerPlayer):
-    def __init__(self, side, depth=2):
+    def __init__(self, side, depth=3):
         self.side = side
         self.depth = depth
     def pick_move(self, board):
