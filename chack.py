@@ -63,19 +63,21 @@ def play(board, strategies):
     players = [strategy(side)
                for strategy, side in zip(strategies, board.get_sides())]
     while board.get_outcome() is None:
+        board.show()
         board = board.play_turn(players)
         print
         print
-    for player in players:
-        player.on_game_over(board)
+    if board.get_outcome() == 'draw':
+        print 'A draw.'
+    else:
+        print '%s wins!' % board.get_outcome().capitalize()
 
-class HumanPlayer:
-
+class Player(object):
     def __init__(self, side):
         self.side = side
 
+class HumanPlayer(Player):
     def pick_move(self, board):
-        board.show()
         while True:
             string = raw_input('%s, your move? ' % self.side.capitalize())
             try:
@@ -85,49 +87,21 @@ class HumanPlayer:
             else:
                 return move
 
-    def on_game_over(self, board):
-        board.show()
-        if board.get_outcome() is None:
-            pass
-        elif board.get_outcome() == self.side:
-            print '%s, you win!' % self.side.capitalize()
-        elif board.get_outcome() == 'draw':
-            print 'You draw.'
-        else: print '%s, you lose!' % self.side.capitalize()
-
-class ComputerPlayer:
-    def __init__(self, side):
-        self.side = side
-
-    def on_game_over(self, board):
-        board.show()
-        if board.get_outcome() is None:
-            pass
-        elif board.get_outcome() == self.side:
-            print '%s, you win!' % self.side.capitalize()
-        elif board.get_outcome() == 'draw':
-            print 'You draw.'
-        else:
-            print '%s, you lose!' % self.side.capitalize()
-
-class RandomPlayer(ComputerPlayer):
+class RandomPlayer(Player):
     def pick_move(self, board):
-        board.show()
         return random.choice(board.get_piece_moves())
 
-class GreedyPlayer(ComputerPlayer):
+class GreedyPlayer(Player):
     def pick_move(self, board):
-        board.show()
         return max(board.get_piece_moves(),
                    key=lambda move: greedy_evaluate(move.update(board),
                                                     self.side))
 
-class MinimaxPlayer(ComputerPlayer):
+class MinimaxPlayer(Player):
     def __init__(self, side, depth=2):
         self.side = side
         self.depth = depth
     def pick_move(self, board):
-        board.show()
         return min(board.get_piece_moves(),
                    key=lambda move: minimax_value(move.update(board),
                                                   opponent(self.side),
@@ -467,6 +441,6 @@ strategy_names = {'human': HumanPlayer,
                   'greedy': GreedyPlayer,
                   'random': RandomPlayer,
                   'minimax': MinimaxPlayer}
-
+random.seed(1234)
 if __name__ == '__main__':
     main(sys.argv)
