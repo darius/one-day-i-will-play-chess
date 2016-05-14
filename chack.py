@@ -1,32 +1,8 @@
 """
-Chess board
-Starting work on a ComputerPlayer!
-Sucks in other ways too
+A basic, slow chess player with a tty UI.
 """
 
-import json
-import sys
-import random
-
-## response = '{"clock":{"w":300,"b":300},"pgn":"","fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","turn":"w","result":"*","color":"w"}'
-## rr = json.loads(response)
-## rr
-#. {u'turn': u'w', u'pgn': u'', u'clock': {u'b': 300, u'w': 300}, u'fen': u'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', u'result': u'*', u'color': u'w'}
-## rr['clock']
-#. {u'b': 300, u'w': 300}
-## rr['turn']
-#. u'w'
-## print str(parse_FEN(rr['fen']))
-#. 8  r n b q k b n r
-#. 7  p p p p p p p p
-#. 6  . . . . . . . .
-#. 5  . . . . . . . .
-#. 4  . . . . . . . .
-#. 3  . . . . . . . .
-#. 2  P P P P P P P P
-#. 1  R N B Q K B N R
-#. 
-#.    a b c d e f g h
+import json, random, sys
 
 ## b = InitialChessBoard()
 ## b.mover
@@ -53,24 +29,6 @@ import random
 ## b1 = m.update(b)
 ## b1.outcome
 #. 'black'
-
-## fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-## b2 = parse_FEN(fen)
-## b2.mover
-#. 'white'
-## b2.castling
-#. ((True, True), (True, True))
-## print str(b2)
-#. 8  r n b q k b n r
-#. 7  p p p p p p p p
-#. 6  . . . . . . . .
-#. 5  . . . . . . . .
-#. 4  . . . . . . . .
-#. 3  . . . . . . . .
-#. 2  P P P P P P P P
-#. 1  R N B Q K B N R
-#. 
-#.    a b c d e f g h
 
 def parse_FEN(fen):
     placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock = fen.split()
