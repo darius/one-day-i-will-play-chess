@@ -5,7 +5,7 @@ https://community.recurse.com/t/ngw-chess-ai-tournament/1724
 
 import requests, sys, time
 
-from chack import *
+import chack
 
 stem = 'http://52.200.188.234:3000/'
 
@@ -34,7 +34,7 @@ def main(argv):
 
         color = js['color']
         side = {'w': 'white', 'b': 'black'}[color]
-        player = strategy_names[strategy](side)
+        player = chack.strategy_names[strategy](side)
 
         turn = js['turn']
         if turn != color:
@@ -44,7 +44,7 @@ def main(argv):
 
         board = parse_FEN(js['fen'])
 #        print board
-        move = player.pick_move(board)
+        move = player(board)
         print 'playing', move, 'yielding'
         print move.update(board)
 
@@ -74,7 +74,7 @@ def parse_FEN(fen):
     castling = (('k' in castling, 'q' in castling),
                 ('K' in castling, 'Q' in castling))
     en_passant = None if en_passant_target == '-' else parse_coords(en_passant_target)
-    return ChessBoard(mover, surround(squares), castling, en_passant, None)
+    return chack.ChessBoard(mover, surround(squares), castling, en_passant, None)
 
 def surround(rows):
     return ['----------'] + ['-%s-' % row for row in rows] + ['----------']
