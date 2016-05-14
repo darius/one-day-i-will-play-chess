@@ -146,25 +146,6 @@ class HumanPlayer:
             print 'You draw.'
         else: print '%s, you lose!' % self.side.capitalize()
 
-def minimax_value(board, side, depth):
-    if 0 < depth:
-        moves = board.get_piece_moves()
-        if not moves: return 0
-        return -min(minimax_value(move.update(board), opponent(side), depth-1)
-                    for move in moves)
-    return greedy_evaluate(board, side) + random.uniform(0, 0.001)
-
-piece_values = dict(p=1, n=3.1, b=3.3, r=5, q=9, k=1000)
-for pp, vv in piece_values.items():
-    piece_values[pp.upper()] = -vv
-piece_values[' '] = 0
-piece_values['-'] = 0
-
-def greedy_evaluate(board, side):
-    total = sum(piece_values[piece]
-                for piece in "".join(board.squares))
-    return -total if side == "white" else total
-
 class ComputerPlayer:
     def __init__(self, side):
         self.side = side
@@ -180,29 +161,51 @@ class ComputerPlayer:
         else:
             print '%s, you lose!' % self.side.capitalize()
 
+class RandomComputerPlayer(ComputerPlayer):
+    def pick_move(self, board):
+        board.show()
+        return random.choice(board.get_piece_moves())
+
 class GreedyComputerPlayer(ComputerPlayer):
     def pick_move(self, board):
         board.show()
-        possible_moves = board.get_moves()
-        possible_moves.remove(ResignMove())
-        best_move = max(possible_moves, key=lambda move: greedy_evaluate(move.update(board), self.side))
-        return best_move
+        return max(board.get_piece_moves(),
+                   key=lambda move: greedy_evaluate(move.update(board),
+                                                    self.side))
 
 class MinimaxPlayer(ComputerPlayer):
-    def __init__(self, side, depth=3):
+    def __init__(self, side, depth=2):
         self.side = side
         self.depth = depth
     def pick_move(self, board):
         board.show()
-        possible_moves = board.get_piece_moves()
-        return min(possible_moves, key=lambda move: minimax_value(move.update(board), opponent(self.side), self.depth))
+        return min(board.get_piece_moves(),
+                   key=lambda move: minimax_value(move.update(board),
+                                                  opponent(self.side),
+                                                  self.depth))
 
-class RandomComputerPlayer(ComputerPlayer):
-    def pick_move(self, board):
-        board.show()
-        possible_moves = board.get_moves()
-        possible_moves.remove(ResignMove())
-        return random.choice(possible_moves)
+def minimax_value(board, side, depth):
+    if depth == 0:
+        return greedy_evaluate(board, side)
+    moves = board.get_piece_moves()
+    if moves:
+        return -min(minimax_value(move.update(board), opponent(side), depth-1)
+                    for move in moves)
+    else:
+        return 0
+
+piece_values = dict(p=1, n=3.1, b=3.3, r=5, q=9, k=1000)
+for pp, vv in piece_values.items():
+    piece_values[pp.upper()] = -vv
+piece_values[' '] = 0
+piece_values['-'] = 0
+
+def greedy_evaluate(board, side):
+    total = sum(piece_values[piece]
+                for piece in ''.join(board.squares))
+    # Just a little randomness makes play less boring:
+    total += random.uniform(0, 0.001)
+    return -total if side == 'white' else total
 
 def InitialChessBoard():
     squares = ['----------',
@@ -231,12 +234,12 @@ class ChessBoard:
 
     def __str__(self):
         def addSpace(line):
-            return " ".join(line)
+            return ' '.join(line)
         def addDots(line):
-            return line.replace(" ", ".")
+            return line.replace(' ', '.')
 
-        return ('\n'.join(str(8-i)+"  "+addSpace(addDots(line[1:-1])) for i, line in enumerate(self.squares[1:-1]))
-                + '\n\n' +  "   a b c d e f g h")
+        return ('\n'.join(str(8-i)+'  '+addSpace(addDots(line[1:-1])) for i, line in enumerate(self.squares[1:-1]))
+                + '\n\n' +  '   a b c d e f g h')
 
     def check(self, side):
         """ check if a particular player is in check """
@@ -246,7 +249,7 @@ class ChessBoard:
         
         possible_boards = [move.update(self) for move in self.get_piece_moves()]
         for board in possible_boards:
-            if king not in "".join(board.squares):
+            if king not in ''.join(board.squares):
                 return True
         return False
 
