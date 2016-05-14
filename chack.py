@@ -50,11 +50,8 @@ def parse_FEN(fen):
                 s += p
         squares.append(s)
     mover = {'w': 'white', 'b': 'black'}[to_move]
-    if castling == '-':
-        castling = ((False, False), (False, False))
-    else:
-        castling = (('k' in castling, 'q' in castling),
-                    ('K' in castling, 'Q' in castling))
+    castling = (('k' in castling, 'q' in castling),
+                ('K' in castling, 'Q' in castling))
     en_passant = None if en_passant_target == '-' else parse_coords(en_passant_target)
     return ChessBoard(mover, surround(squares), castling, en_passant, None)
 
