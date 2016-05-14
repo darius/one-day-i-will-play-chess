@@ -74,7 +74,7 @@ class RandomPlayer(Player):
 
 class GreedyPlayer(Player):
     def pick_move(self, board):
-        return max(board.get_piece_moves(),
+        return max(board.gen_piece_moves(),
                    key=lambda move: greedy_evaluate(move.update(board),
                                                     self.side))
 
@@ -83,7 +83,7 @@ class MinimaxPlayer(Player):
         self.side = side
         self.depth = depth
     def pick_move(self, board):
-        return min(board.get_piece_moves(),
+        return min(board.gen_piece_moves(),
                    key=lambda move: minimax_value(move.update(board),
                                                   opponent(self.side),
                                                   self.depth))
@@ -168,7 +168,7 @@ class ChessBoard:
 
     def get_successors(self):
         "Yield the boards that can result from a move (other than resigning)."
-        for move in self.get_piece_moves():
+        for move in self.gen_piece_moves():
             yield move.update(self) 
 
     def resign(self):
