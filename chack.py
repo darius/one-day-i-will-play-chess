@@ -240,32 +240,28 @@ class ChessBoard:
 
     def get_outcome(self):
         "Return None, 'draw', black, or white (meaning the winner)."
-        if self.outcome == None:
+        if self.outcome is None:
             if self.checkmate():
-                return opponent(self.mover)
-            if len(self.get_piece_moves()) == 0:
-                return 'draw'
+                self.outcome = opponent(self.mover)
+            elif not self.get_piece_moves():
+                self.outcome = 'draw'
         return self.outcome
 
     def checkmate(self):
-        """ check if the person about to move is in checkmate """
-        possible_boards = [move.update(self) for move in self.get_piece_moves()]
-        for board in possible_boards:
-            if not board.check(self.mover):
-                return False
-        return True
+        "Is the player to move checkmated?"
+        return all(board.in_check(self.mover)
+                   for board in self.get_successors())
 
-    def check(self, side):
-        """ check if a particular player is in check """
-        if side == 'white':
-            king = 'K'
-        else: king = 'k'
-        
-        possible_boards = [move.update(self) for move in self.get_piece_moves()]
-        for board in possible_boards:
-            if king not in ''.join(board.squares):
-                return True
-        return False
+    def in_check(self, side):
+        "Is the side in check?"
+        king = 'K' if side == 'white' else 'k'
+        return any(king not in ''.join(board.squares)
+                   for board in self.get_successors())
+
+    def get_successors(self):
+        "Yield the boards that can result from a move (other than resigning)."
+        for move in self.get_piece_moves():
+            yield move.update(self) 
 
     def resign(self):
         return ChessBoard(opponent(self.mover),
