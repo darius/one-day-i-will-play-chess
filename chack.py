@@ -156,9 +156,10 @@ class ChessBoard:
         self.outcome = outcome
 
     def __str__(self):
-        return ('\n'.join('%s  %s' % (row_num, ' '.join(row.replace(' ', '.')))
-                          for i, line in enumerate(self.squares[1:-1])
-                          for row_num, row in [(8-i, line[1:-1])])
+        lines = [' '.join(row[1:-1].replace(' ', '.'))
+                 for row in self.squares[1:-1]]
+        return ('\n'.join('%s  %s' % (8-i, line)
+                          for i, line in enumerate(lines))
                 + '\n\n   a b c d e f g h')
 
     def get_outcome(self):
@@ -172,14 +173,17 @@ class ChessBoard:
 
     def checkmate(self):
         "Is the player to move checkmated?"
-        return all(board.in_check(self.mover)
-                   for board in self.get_successors())
+        # Or: is the mover in check after every possible move?
+        # XXX We also need to be in check now
+        # XXX also seems buggy in other ways, though these boards are hard to read in the console
+        return all(board.checking() for board in self.get_successors())
 
-    def in_check(self, side):
-        "Is the side in check?"
-        king = 'K' if side == 'white' else 'k'
-        return any(king not in ''.join(board.squares)
-                   for board in self.get_successors())
+    def checking(self):
+        "Is the opponent in check?"
+        # Operationalized as: can the mover take the opposing king?
+        opposing_king = 'k' if self.mover == 'white' else 'K'
+        return not all(opposing_king in ''.join(board.squares)
+                       for board in self.get_successors())
 
     def get_successors(self):
         "Yield the boards that can result from a move (other than resigning)."
