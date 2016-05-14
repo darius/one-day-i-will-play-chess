@@ -161,12 +161,12 @@ class ComputerPlayer:
         else:
             print '%s, you lose!' % self.side.capitalize()
 
-class RandomComputerPlayer(ComputerPlayer):
+class RandomPlayer(ComputerPlayer):
     def pick_move(self, board):
         board.show()
         return random.choice(board.get_piece_moves())
 
-class GreedyComputerPlayer(ComputerPlayer):
+class GreedyPlayer(ComputerPlayer):
     def pick_move(self, board):
         board.show()
         return max(board.get_piece_moves(),
@@ -194,18 +194,18 @@ def minimax_value(board, side, depth):
     else:
         return 0
 
-piece_values = dict(p=1, n=3.1, b=3.3, r=5, q=9, k=1000)
-for pp, vv in piece_values.items():
-    piece_values[pp.upper()] = -vv
-piece_values[' '] = 0
-piece_values['-'] = 0
-
 def greedy_evaluate(board, side):
     total = sum(piece_values[piece]
                 for piece in ''.join(board.squares))
     # Just a little randomness makes play less boring:
     total += random.uniform(0, 0.001)
     return -total if side == 'white' else total
+
+piece_values = dict(p=1, n=3.1, b=3.3, r=5, q=9, k=1000)
+for pp, vv in piece_values.items():
+    piece_values[pp.upper()] = -vv
+piece_values[' '] = 0
+piece_values['-'] = 0
 
 def InitialChessBoard():
     squares = ['----------',
@@ -233,13 +233,27 @@ class ChessBoard:
         self.outcome = outcome
 
     def __str__(self):
-        def addSpace(line):
-            return ' '.join(line)
-        def addDots(line):
-            return line.replace(' ', '.')
+        return ('\n'.join('%s  %s' % (row_num, ' '.join(row.replace(' ', '.')))
+                          for i, line in enumerate(self.squares[1:-1])
+                          for row_num, row in [(8-i, line[1:-1])])
+                + '\n\n   a b c d e f g h')
 
-        return ('\n'.join(str(8-i)+'  '+addSpace(addDots(line[1:-1])) for i, line in enumerate(self.squares[1:-1]))
-                + '\n\n' +  '   a b c d e f g h')
+    def get_outcome(self):
+        "Return None, 'draw', black, or white (meaning the winner)."
+        if self.outcome == None:
+            if self.checkmate():
+                return opponent(self.mover)
+            if len(self.get_piece_moves()) == 0:
+                return 'draw'
+        return self.outcome
+
+    def checkmate(self):
+        """ check if the person about to move is in checkmate """
+        possible_boards = [move.update(self) for move in self.get_piece_moves()]
+        for board in possible_boards:
+            if not board.check(self.mover):
+                return False
+        return True
 
     def check(self, side):
         """ check if a particular player is in check """
@@ -252,23 +266,6 @@ class ChessBoard:
             if king not in ''.join(board.squares):
                 return True
         return False
-
-    def checkmate(self):
-        """ check if the person about to move is in checkmate """
-        possible_boards = [move.update(self) for move in self.get_piece_moves()]
-        for board in possible_boards:
-            if not board.check(self.mover):
-                return False
-        return True
-
-    def get_outcome(self):
-        "Return None, 'draw', black, or white (meaning the winner)."
-        if self.outcome == None:
-            if self.checkmate():
-                return opponent(self.mover)
-            if len(self.get_piece_moves()) == 0:
-                return 'draw'
-        return self.outcome
 
     def resign(self):
         return ChessBoard(opponent(self.mover),
@@ -524,7 +521,10 @@ class PawnPromotion(PieceMove):
     def update(self, board):
         return board.move_promoting(self.from_pos, self.to_pos)
 
-strategy_names = {'human': HumanPlayer, 'greedy': GreedyComputerPlayer, 'random': RandomComputerPlayer, 'minimax': MinimaxPlayer}
+strategy_names = {'human': HumanPlayer,
+                  'greedy': GreedyPlayer,
+                  'random': RandomPlayer,
+                  'minimax': MinimaxPlayer}
 
 if __name__ == '__main__':
     main(sys.argv)
