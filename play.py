@@ -76,5 +76,15 @@ def parse_FEN(fen):
     en_passant = None if en_passant_target == '-' else parse_coords(en_passant_target)
     return ChessBoard(mover, surround(squares), castling, en_passant, None)
 
+def surround(rows):
+    return ['----------'] + ['-%s-' % row for row in rows] + ['----------']
+
+def parse_coords(s):
+    assert len(s) == 2
+    c = 1 + 'abcdefgh'.index(s[0])
+    r = int(s[1])
+    assert 1 <= r <= 8
+    return r, c
+
 if __name__ == '__main__':
     main(sys.argv)

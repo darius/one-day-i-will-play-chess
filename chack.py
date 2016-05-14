@@ -28,9 +28,6 @@ import random, sys
 ## b1.outcome
 #. 'black'
 
-def surround(rows):
-    return ['----------'] + ['-%s-' % row for row in rows] + ['----------']
-
 def main(argv):
     print "(Moves look like 'e2e3')"
     play_chess(strategy_names[argv[1]], strategy_names[argv[2]])
@@ -142,16 +139,16 @@ class ChessBoard:
         # Or: is the mover in check after every possible move?
         # XXX We also need to be in check now
         # XXX also seems buggy in other ways, though these boards are hard to read in the console
-        return all(board.checking() for board in self.get_successors())
+        return all(board.checking() for board in self.gen_successors())
 
     def checking(self):
         "Is the opponent in check?"
         # Operationalized as: can the mover take the opposing king?
         opposing_king = 'k' if self.mover == 'white' else 'K'
         return not all(opposing_king in ''.join(board.squares)
-                       for board in self.get_successors())
+                       for board in self.gen_successors())
 
-    def get_successors(self):
+    def gen_successors(self):
         "Yield the boards that can result from a move (other than resigning)."
         for move in self.gen_piece_moves():
             yield move.update(self) 
@@ -236,9 +233,6 @@ class ChessBoard:
 
     def show(self):
         print self
-
-    def get_sides(self):
-        return (white, black)
 
     def play_turn(self, (white_player, black_player)):
         player = white_player if self.mover == white else black_player
@@ -382,20 +376,9 @@ class PieceMove:
         return '%s%d%s%d' % ('abcdefgh'[fc-1], 9-fr,
                              'abcdefgh'[tc-1], 9-tr)
 
-def parse_coords(s):
-    assert len(s) == 2
-    c = 1 + 'abcdefgh'.index(s[0])
-    r = int(s[1])
-    assert 1 <= r <= 8
-    return r, c
-
 class CastlingMove(PieceMove):
     def update(self, board):
         return board.castle(self.from_pos, self.to_pos)
-    def XXX__str__(self): # XXX actually the server takes the PieceMove notation now
-        if self.to_pos[1] == 3: return 'o-o-o'
-        if self.to_pos[1] == 7: return 'o-o'
-        assert False
 
 class EnPassantCapture(PieceMove):
     # XXX might need special parsing/unparsing
