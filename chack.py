@@ -313,20 +313,17 @@ class ChessBoard:
         return [ResignMove()] + self.get_piece_moves()
 
     def get_piece_moves(self):
-        return sum(map(self.moves_from, self.army(self.mover)), [])
+        return list(self.gen_piece_moves())
 
-    def army(self, player):
+    def gen_piece_moves(self):
+        is_white = (self.mover == white)
         for r, row in enumerate(self.squares):
             for c, piece in enumerate(row):
-                if piece.isalpha() and piece.isupper() == (player == white):
-                    yield r, c
+                if piece.isalpha() and piece.isupper() == is_white:
+                    for move in self.gen_moves_from(r, c, piece.upper(), is_white):
+                        yield move
 
-    def moves_from(self, pos):
-        return list(self.gen_moves_from(pos))
-
-    def gen_moves_from(self, (r, c)):
-        piece = self.squares[r][c]
-        piece, is_white = piece.upper(), piece.isupper()
+    def gen_moves_from(self, r, c, piece, is_white):
 
         def is_takeable(r1, c1):
             return is_empty(r1, c1) or has_opponent(r1, c1)
@@ -358,9 +355,7 @@ class ChessBoard:
                             yield pawn_move(r+dr*i, c+dc*i)
                         break
 
-        if piece in ' -':
-            pass
-        elif piece == 'P':
+        if piece == 'P':
             forward = -1 if is_white else 1
             if is_empty(r+forward, c):
                 yield move_to(r+forward, c)
@@ -396,15 +391,17 @@ class ChessBoard:
                 if 1 <= r+dr <= 8 and 1 <= c+dc <= 8:
                     if is_takeable(r+dr, c+dc):
                         yield move_to(r+dr, c+dc)
+        elif piece in ' -':
+            pass
         else:
-            assert False
+            assert False, piece
 
-rook_dirs   = [( 0, 1), ( 0,-1), ( 1, 0), (-1, 0)]
-bishop_dirs = [(-1,-1), (-1, 1), ( 1,-1), ( 1, 1)]
+rook_dirs   = (( 0, 1), ( 0,-1), ( 1, 0), (-1, 0))
+bishop_dirs = ((-1,-1), (-1, 1), ( 1,-1), ( 1, 1))
 queen_dirs  = rook_dirs + bishop_dirs
 
-knight_jumps = [( 2, 1), ( 2,-1), ( 1, 2), ( 1,-2),
-                (-2, 1), (-2,-1), (-1, 2), (-1,-2)]
+knight_jumps = (( 2, 1), ( 2,-1), ( 1, 2), ( 1,-2),
+                (-2, 1), (-2,-1), (-1, 2), (-1,-2))
 
 white, black = 'white', 'black'
 
