@@ -40,15 +40,9 @@ def parse_FEN(fen):
     print ' halfmove_clock', halfmove_clock
     print ' fullmove_clock', fullmove_clock
 
-    squares = []
-    for row in placement.split('/'):
-        s = ''
-        for p in row:
-            if p.isdigit():
-                s += ' ' * int(p)
-            else:
-                s += p
-        squares.append(s)
+    squares = [''.join(' ' * int(p) if p.isdigit() else p
+                       for p in row)
+               for row in placement.split('/')]
     mover = {'w': 'white', 'b': 'black'}[to_move]
     castling = (('k' in castling, 'q' in castling),
                 ('K' in castling, 'Q' in castling))
