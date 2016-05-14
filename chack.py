@@ -2,7 +2,7 @@
 A basic, slow chess player with a tty UI.
 """
 
-import json, random, sys
+import random, sys
 
 ## b = InitialChessBoard()
 ## b.mover
