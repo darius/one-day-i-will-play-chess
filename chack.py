@@ -30,25 +30,6 @@ import json, random, sys
 ## b1.outcome
 #. 'black'
 
-def parse_FEN(fen):
-    placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock = fen.split()
-    print 'FEN from server:'
-    print ' placement', placement
-    print ' to_move', to_move
-    print ' castling', castling
-    print ' en_passant', en_passant_target
-    print ' halfmove_clock', halfmove_clock
-    print ' fullmove_clock', fullmove_clock
-
-    squares = [''.join(' ' * int(p) if p.isdigit() else p
-                       for p in row)
-               for row in placement.split('/')]
-    mover = {'w': 'white', 'b': 'black'}[to_move]
-    castling = (('k' in castling, 'q' in castling),
-                ('K' in castling, 'Q' in castling))
-    en_passant = None if en_passant_target == '-' else parse_coords(en_passant_target)
-    return ChessBoard(mover, surround(squares), castling, en_passant, None)
-
 def surround(rows):
     return ['----------'] + ['-%s-' % row for row in rows] + ['----------']
 
