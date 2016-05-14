@@ -20,8 +20,6 @@ import random, sys
 #. 1  R N B Q K B N R
 #. 
 #.    a b c d e f g h
-## pw = HumanPlayer(white)
-## pb = HumanPlayer(black)
 ## b.outcome
 ## ' '.join(sorted(map(str, b.get_moves())))
 #. 'a2a3 a2a4 b1a3 b1c3 b2b3 b2b4 c2c3 c2c4 d2d3 d2d4 e2e3 e2e4 f2f3 f2f4 g1f3 g1h3 g2g3 g2g4 h2h3 h2h4 resign'
@@ -40,9 +38,7 @@ def main(argv):
 def play_chess(white_strategy, black_strategy):
     return play(InitialChessBoard(), [white_strategy, black_strategy])
 
-def play(board, strategies):
-    players = [strategy(side)
-               for strategy, side in zip(strategies, board.get_sides())]
+def play(board, players):
     while board.get_outcome() is None:
         board.show()
         board = board.play_turn(players)
@@ -53,57 +49,46 @@ def play(board, strategies):
     else:
         print '%s wins!' % board.get_outcome().capitalize()
 
-class Player(object):
-    def __init__(self, side):
-        self.side = side
+def human_player(board):
+    while True:
+        string = raw_input('%s, your move? ' % board.mover.capitalize())
+        try:
+            move = board.parse_move(string)
+        except MoveIllegal:
+            print 'Illegal move.'
+        else:
+            return move
 
-class HumanPlayer(Player):
-    def pick_move(self, board):
-        while True:
-            string = raw_input('%s, your move? ' % self.side.capitalize())
-            try:
-                move = board.parse_move(string)
-            except MoveIllegal:
-                print 'Illegal move.'
-            else:
-                return move
+def random_player(board):
+    return random.choice(board.get_piece_moves())
 
-class RandomPlayer(Player):
-    def pick_move(self, board):
-        return random.choice(board.get_piece_moves())
+def greedy_player(board):
+    return max(board.gen_piece_moves(),
+               key=lambda move: -greedy_evaluate(move.update(board)))
 
-class GreedyPlayer(Player):
-    def pick_move(self, board):
-        return max(board.gen_piece_moves(),
-                   key=lambda move: greedy_evaluate(move.update(board),
-                                                    self.side))
-
-class MinimaxPlayer(Player):
-    def __init__(self, side, depth=2):
-        self.side = side
-        self.depth = depth
-    def pick_move(self, board):
+def MinimaxPlayer(depth):
+    def player(board):
         return min(board.gen_piece_moves(),
-                   key=lambda move: minimax_value(move.update(board),
-                                                  opponent(self.side),
-                                                  self.depth))
+                   key=lambda move: minimax_value(move.update(board), depth))
+    return player
 
-def minimax_value(board, side, depth):
+def minimax_value(board, depth):
     if depth == 0:
-        return greedy_evaluate(board, side)
+        return greedy_evaluate(board)
     moves = board.get_piece_moves()
     if moves:
-        return -min(minimax_value(move.update(board), opponent(side), depth-1)
+        return -min(minimax_value(move.update(board), depth-1)
                     for move in moves)
     else:
         return 0
 
-def greedy_evaluate(board, side):
+def greedy_evaluate(board):
+    "Return the mover's weighted piece advantage."
     total = sum(piece_values[piece]
                 for piece in ''.join(board.squares))
     # Just a little randomness makes play less boring:
     total += random.uniform(0, 0.001)
-    return -total if side == 'white' else total
+    return -total if board.mover == 'white' else total
 
 piece_values = dict(p=1, n=3.1, b=3.3, r=5, q=9, k=1000)
 for pp, vv in piece_values.items():
@@ -257,10 +242,10 @@ class ChessBoard:
 
     def play_turn(self, (white_player, black_player)):
         player = white_player if self.mover == white else black_player
-        move = player.pick_move(self)
-        if move in self.get_moves():
-            return move.update(self)
-        raise Exception("Bad move")
+        move = player(self)
+        if move not in self.get_moves():
+            raise Exception("Bad move")
+        return move.update(self)
 
     def parse_move(self, string):
         for move in self.get_moves():
@@ -422,10 +407,10 @@ class PawnPromotion(PieceMove):
     def update(self, board):
         return board.move_promoting(self.from_pos, self.to_pos)
 
-strategy_names = {'human': HumanPlayer,
-                  'greedy': GreedyPlayer,
-                  'random': RandomPlayer,
-                  'minimax': MinimaxPlayer}
+strategy_names = {'human': human_player,
+                  'greedy': greedy_player,
+                  'random': random_player,
+                  'minimax': MinimaxPlayer(2)}
 random.seed(1234)
 if __name__ == '__main__':
     main(sys.argv)
