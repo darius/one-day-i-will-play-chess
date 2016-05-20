@@ -287,10 +287,10 @@ class ChessBoard:
             for dr, dc in dirs:
                 for i in range(1, 9):
                     if is_empty(r+dr*i, c+dc*i):
-                        yield pawn_move(r+dr*i, c+dc*i)
+                        yield PieceMove((r, c), (r+dr*i, c+dc*i))
                     else:
                         if has_opponent(r+dr*i, c+dc*i):
-                            yield pawn_move(r+dr*i, c+dc*i)
+                            yield PieceMove((r, c), (r+dr*i, c+dc*i))
                         break
 
         if piece == 'P':
