@@ -33,7 +33,7 @@ def main(argv):
     play_chess(strategy_names[argv[1]], strategy_names[argv[2]])
 
 def play_chess(white_strategy, black_strategy):
-    return play(InitialChessBoard(), [white_strategy, black_strategy])
+    play(InitialChessBoard(), [white_strategy, black_strategy])
 
 def play(board, players):
     while board.get_outcome() is None:
@@ -41,10 +41,9 @@ def play(board, players):
         board = board.play_turn(players)
         print
         print
-    if board.get_outcome() == 'draw':
-        print 'A draw.'
-    else:
-        print '%s wins!' % board.get_outcome().capitalize()
+    print board
+    from play import unparse_FEN
+    print unparse_FEN(board)
 
 def human_player(board):
     while True:
@@ -57,15 +56,15 @@ def human_player(board):
             return move
 
 def random_player(board):
-    return random.choice(board.get_piece_moves())
+    return random.choice(list(board.gen_legal_moves()))
 
 def greedy_player(board):
-    return max(board.gen_piece_moves(),
+    return max(board.gen_legal_moves(),
                key=lambda move: -greedy_evaluate(move.update(board)))
 
 def MinimaxPlayer(depth):
     def player(board):
-        return min(board.gen_piece_moves(),
+        return min(board.gen_legal_moves(),
                    key=lambda move: minimax_value(move.update(board), depth))
     return player
 
@@ -121,9 +120,14 @@ class ChessBoard:
     def __str__(self):
         lines = [' '.join(row[1:-1].replace(' ', '.'))
                  for row in self.squares[1:-1]]
+        outcome = self.get_outcome()
+        state = ('A draw.' if outcome == 'draw' else
+                 '%s wins!' % outcome.capitalize() if outcome is not None else
+                 '%s to move' % self.mover)
         return ('\n'.join('%s  %s' % (8-i, line)
                           for i, line in enumerate(lines))
-                + '\n\n   a b c d e f g h')
+                + '\n\n   a b c d e f g h'
+                + '    ' + state)
 
     def get_outcome(self):
         "Return None, 'draw', black, or white (meaning the winner)."
@@ -237,7 +241,7 @@ class ChessBoard:
     def play_turn(self, (white_player, black_player)):
         player = white_player if self.mover == white else black_player
         move = player(self)
-        if move not in self.get_moves():
+        if move not in list(self.gen_legal_moves()) + [ResignMove()]:
             raise Exception("Bad move")
         return move.update(self)
 
@@ -246,6 +250,10 @@ class ChessBoard:
             if move.matches(string):
                 return move
         raise MoveIllegal()
+
+    def gen_legal_moves(self):
+        return (move for move in self.gen_piece_moves()
+                if not move.update(self).checking())
 
     def get_moves(self):
         return [ResignMove()] + self.get_piece_moves()
