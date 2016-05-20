@@ -57,6 +57,29 @@ def main(argv):
         
         time.sleep(0.2)
 
+def unparse_FEN(board):
+    placement = unparse_FEN_placement(board)
+    to_move = board.mover[0]
+    ((k, q), (K, Q)) = board.castling
+    castling = (''.join(s if p else ''
+                        for p, s in zip([K,Q,k,q], 'KQkq'))
+                or '-')
+    en_passant_target = ('-' if board.en_passant_target is None
+                         else 'XXX')
+    halfmove_clock, fullmove_clock = '0', '1' # arbitrary
+    return ' '.join([placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock])
+
+def unparse_FEN_placement(board):
+    def unparse_row(row):
+        s = ''
+        for p in row:
+            if   p != ' ':         s += p
+            elif s[-1:].isdigit(): s = s[:-1] + str(int(s[-1])+1)
+            else:                  s += '1'
+        return s
+    return '/'.join(map(unparse_row, [row[1:-1]
+                                      for row in board.squares[1:-1]]))
+
 def parse_FEN(fen):
     placement, to_move, castling, en_passant_target, halfmove_clock, fullmove_clock = fen.split()
     print 'FEN from server:'
